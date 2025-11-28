@@ -1,0 +1,71 @@
+  <!doctype html>
+  <html lang="pt-br">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
+    <title>KM LUCRO</title>
+    <meta name="theme-color" content="#09090b">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="style.css" />
+    
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#FFD000">
+    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="apple-touch-icon" href="icon.png">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  </head>
+  <body>
+
+  <div id="splash">
+    <div class="splash-content">
+      <img src="imagens/logo.png" class="splash-logo-img" alt="KM Lucro">
+      <p class="splash-sub">Gestão Inteligente</p>
+    </div>
+  </div>
+
+  <div class="app-container">
+    
+    <header id="appHeader" class="app-header hidden">
+      <button id="btnBack" class="btn-back">←</button>
+      <div id="headerTitle" class="header-title">KM LUCRO</div>
+    </header>
+
+    <div id="viewGarage">
+      <div class="garage-header">
+        <img src="imagens/logo.png" class="logo-header" alt="KM Lucro">
+      </div>
+
+      <div class="car-list" id="carList"></div>
+      
+      <button class="fab-help" id="btnGarageHelp">?</button>
+      <button class="fab-add" id="btnAddCar">+</button>
+    </div>
+
+    <div id="viewPanel" class="hidden">
+      <div id="panelContent"></div>
+    </div>
+
+    <div id="viewResult" class="result-view hidden">
+      <div id="resultContent" style="width:100%"></div>
+    </div>
+
+  </div>
+
+  <script src="app.js"></script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js')
+          .then(() => console.log('App pronto para instalar'))
+          .catch((err) => console.log('Erro SW:', err));
+      });
+    }
+  </script>
+
+  </body>
+  </html>
