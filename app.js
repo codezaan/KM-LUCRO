@@ -197,11 +197,23 @@ function startTutorial(isManual){
       if(helpBtn) helpBtn.classList.add('hidden'); // Esconde ajuda se não tem carro (tela de boas vindas ja explica)
       carListEl.innerHTML = `
         <div class="welcome-box">
-          <img src="imagens/logo.png" class="welcome-img">
+          <img src="imagens/logo.png" class="welcome-img" alt="KM Lucro">
           <div class="welcome-title">Garagem Vazia</div>
           <div class="welcome-text">Adicione seu primeiro veículo para começar.</div>
           <button id="btnFirstAdd" class="btn-primary">ADICIONAR VEÍCULO</button>
         </div>`;
+
+      // --- forçar src correto da welcome-img (fix imediato) ---
+      setTimeout(() => {
+        const splash = document.querySelector('.splash-logo-img');
+        const welcomeImg = document.querySelector('.welcome-img');
+        if (welcomeImg) {
+          // copia o src do splash (que funciona) — fallback para './imagens/logo.png'
+          welcomeImg.src = splash ? splash.src : './imagens/logo.png';
+          welcomeImg.alt = welcomeImg.alt || 'KM Lucro';
+        }
+      }, 50);
+
       const btnFirst = qs('#btnFirstAdd');
       if(btnFirst) btnFirst.onclick = () => { 
           if(tutTimeout) clearTimeout(tutTimeout);
