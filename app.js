@@ -1,3 +1,6 @@
+// KM LUCRO - app.js (COMPLETO)
+// Colar por cima do seu app.js atual
+
 (function(){
   const qs = s => document.querySelector(s);
   const qsa = s => Array.from(document.querySelectorAll(s));
@@ -70,64 +73,78 @@
 
   // --- NAV ---
   function navigate(to, title='KM LUCRO', backFn=null){
-    viewGarage.classList.add('hidden'); viewPanel.classList.add('hidden'); viewResult.classList.add('hidden');
-    uiHeader.classList.add('hidden');
-    if(to==='GARAGE'){ viewGarage.classList.remove('hidden'); }
-    else if(to==='RESULT') { viewResult.classList.remove('hidden'); }
+    if(viewGarage) viewGarage.classList.add('hidden');
+    if(viewPanel) viewPanel.classList.add('hidden');
+    if(viewResult) viewResult.classList.add('hidden');
+    if(uiHeader) uiHeader.classList.add('hidden');
+
+    if(to==='GARAGE'){ viewGarage && viewGarage.classList.remove('hidden'); }
+    else if(to==='RESULT') { viewResult && viewResult.classList.remove('hidden'); }
     else {
-      uiHeader.classList.remove('hidden'); uiTitle.textContent=title;
-      if(to==='PANEL') viewPanel.classList.remove('hidden');
+      uiHeader && uiHeader.classList.remove('hidden');
+      if(uiTitle) uiTitle.textContent=title;
+      if(to==='PANEL') viewPanel && viewPanel.classList.remove('hidden');
     }
-    uiBack.onclick = backFn || (() => navigate('GARAGE'));
+    if(uiBack) uiBack.onclick = backFn || (() => navigate('GARAGE'));
   }
 
-  // ---------- LOAD HANDLER (updated: show tutorial in front on first run) ----------
-  window.addEventListener('load', ()=>{
+  // ---------- LOAD HANDLER (robusto) ----------
+  window.addEventListener('load', () => {
     const splash = qs('#splash');
+    const splashImg = document.querySelector('.splash-logo-img');
 
-    renderGarage();
-    
-    // Botão AJUDA DA GARAGEM
+    function removeSplashImmediate() {
+      try {
+        if (!splash) return;
+        if (splash.dataset.removed === '1') return;
+        splash.dataset.removed = '1';
+        splash.style.transition = 'opacity 400ms ease';
+        splash.style.opacity = '0';
+        setTimeout(() => {
+          if (splash && splash.parentNode) splash.parentNode.removeChild(splash);
+        }, 450);
+      } catch (err) {
+        if (splash && splash.parentNode) splash.parentNode.removeChild(splash);
+      }
+    }
+
+    // render inicial
+    try{ renderGarage(); } catch(e){ console.error('renderGarage error', e); }
+
     const helpBtn = qs('#btnGarageHelp');
-    if(helpBtn) helpBtn.onclick=()=>startTutorial(true);
+    if (helpBtn) helpBtn.onclick = () => startTutorial(true);
 
     const addBtn = qs('#btnAddCar');
-    if(addBtn) addBtn.onclick=()=>{ 
-        if(tutTimeout) clearTimeout(tutTimeout);
-        localStorage.setItem('tutorial_seen', 'true'); 
-        openModalCar(); 
+    if (addBtn) addBtn.onclick = () => {
+      if (tutTimeout) clearTimeout(tutTimeout);
+      localStorage.setItem('tutorial_seen', 'true');
+      openModalCar();
     };
-    
-    // Se nunca viu o tutorial: mostra IMEDIATAMENTE em primeiro plano
+
     const seen = localStorage.getItem('tutorial_seen');
-    if(!seen && carros.length === 0) {
-      // esconde o splash para o tutorial ficar "clean" na frente
-      if(splash) splash.style.display = 'none';
-
-      // mostra tutorial agora; a função grava tutorial_seen ao fechar se for first-run
+    if (!seen && carros.length === 0) {
+      // first-run: mostra tutorial em primeiro plano
+      if (splash) splash.style.display = 'none';
       startTutorial(false);
+      // garante remoção do splash mesmo se re-appear
+      setTimeout(()=>{ if(splash && splash.parentNode) splash.parentNode.removeChild(splash); }, 6000);
+      return;
+    }
 
-      // não precisa do timeout
-      tutTimeout = null;
-    } else {
-      // comportamento normal: fade do splash e remoção
-      if(splash){
-        setTimeout(()=>{ splash.style.opacity = 0; setTimeout(()=>splash.remove(),500); }, 2000);
-      }
+    if (splash) {
+      setTimeout(()=>{ removeSplashImmediate(); }, 2000);
+    }
 
-      // se já for visto e houver carros, mantém renderGarage tal qual
-      if(!seen && carros.length > 0){
-        // caso raro: agenda tutorial se quiser (mantido para compatibilidade)
-        tutTimeout = setTimeout(() => startTutorial(false), 2500);
-      }
+    // fallback removal
+    setTimeout(()=>{ if (splash && !splash.dataset.removed) removeSplashImmediate(); }, 6000);
+
+    if (splashImg) {
+      splashImg.addEventListener('error', ()=>{ removeSplashImmediate(); });
     }
   });
 
   // --- TUTORIAL ---
-      
-   // Substitua a função existente por esta:
   function startTutorial(isManual){
-    // evita duplicar
     if(document.querySelector('.tutorial-overlay')) return;
 
     const steps = [
@@ -143,9 +160,8 @@
     ov.setAttribute('role','dialog');
     ov.setAttribute('aria-modal','true');
 
-    // fecha e restaura scroll
     function closeTut(saveSeen=true){
-      document.body.style.overflow = ''; // restaura scroll
+      document.body.style.overflow = '';
       if(saveSeen && !isManual) localStorage.setItem('tutorial_seen','true');
       ov.style.opacity = '0';
       setTimeout(()=>{ if(ov && ov.parentNode) ov.remove(); }, 240);
@@ -156,29 +172,27 @@
       const btnText = currentStep === steps.length - 1 ? 'ENTENDI' : 'PRÓXIMO ➔';
       const skipText = isManual ? 'Fechar' : 'Pular Introdução';
 
-      // monta dots
       let dots = '<div style="display:flex;gap:6px;margin-top:12px">';
       steps.forEach((_,i)=>{ dots += `<span style="width:8px;height:8px;border-radius:8px;display:inline-block;background:${i===currentStep? 'var(--accent)' : '#333'}"></span>`; });
       dots += '</div>';
 
       ov.innerHTML = `
-        <div class="tutorial-card">
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-            <div style="font-size:34px">${s.icon}</div>
-            <div>
-              <div style="font-weight:800;font-size:18px;color:var(--accent);text-transform:uppercase">${s.title}</div>
-              <div style="font-size:13px;color:var(--muted);margin-top:6px">${s.text}</div>
-            </div>
-          </div>
-          ${dots}
-          <div class="btn-row">
-            <button id="tutBtn" class="btn-primary">${btnText}</button>
-            <button id="tutSkip" class="btn-secondary">${skipText}</button>
+      <div class="tutorial-card">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+          <div style="font-size:34px">${s.icon}</div>
+          <div>
+            <div style="font-weight:800;font-size:18px;color:var(--accent);text-transform:uppercase">${s.title}</div>
+            <div style="font-size:13px;color:var(--muted);margin-top:6px">${s.text}</div>
           </div>
         </div>
-      `;
+        ${dots}
+        <div class="btn-row">
+          <button id="tutBtn" class="btn-primary">${btnText}</button>
+          <button id="tutSkip" class="btn-secondary">${skipText}</button>
+        </div>
+      </div>
+    `;
 
-      // eventos
       ov.querySelector('#tutBtn').onclick = () => {
         if(currentStep < steps.length - 1){
           currentStep++;
@@ -191,23 +205,22 @@
       ov.querySelector('#tutSkip').onclick = () => closeTut(isManual ? false : true);
     }
 
-    // fecha ao clicar fora do card
     ov.addEventListener('click', (e) => {
       if(e.target === ov){
         closeTut(isManual ? false : true);
       }
     });
 
-    // impede scroll do body enquanto tutorial aberto
     document.body.appendChild(ov);
     document.body.style.overflow = 'hidden';
     renderStep();
   }
 
-
   // --- GARAGEM ---
   function renderGarage(){
-    carros = loadData('km_carros'); carListEl.innerHTML='';
+    carros = loadData('km_carros'); 
+    if(!carListEl) return;
+    carListEl.innerHTML='';
     const headerLogo = qs('.garage-header');
     const fabBtn = qs('#btnAddCar');
     const helpBtn = qs('#btnGarageHelp');
@@ -215,26 +228,14 @@
     if(!carros.length){ 
       if(headerLogo) headerLogo.classList.add('hidden');
       if(fabBtn) fabBtn.classList.add('hidden');
-      if(helpBtn) helpBtn.classList.add('hidden'); // Esconde ajuda se não tem carro (tela de boas vindas ja explica)
+      if(helpBtn) helpBtn.classList.add('hidden');
       carListEl.innerHTML = `
         <div class="welcome-box">
-          <img src="imagens/logo.png" class="welcome-img" alt="KM Lucro">
+          <img src="imagens/logo.png" class="welcome-img">
           <div class="welcome-title">Garagem Vazia</div>
           <div class="welcome-text">Adicione seu primeiro veículo para começar.</div>
           <button id="btnFirstAdd" class="btn-primary">ADICIONAR VEÍCULO</button>
         </div>`;
-
-      // --- forçar src correto da welcome-img (fix imediato) ---
-      setTimeout(() => {
-        const splash = document.querySelector('.splash-logo-img');
-        const welcomeImg = document.querySelector('.welcome-img');
-        if (welcomeImg) {
-          // copia o src do splash (que funciona) — fallback para './imagens/logo.png'
-          welcomeImg.src = splash ? splash.src : './imagens/logo.png';
-          welcomeImg.alt = welcomeImg.alt || 'KM Lucro';
-        }
-      }, 50);
-
       const btnFirst = qs('#btnFirstAdd');
       if(btnFirst) btnFirst.onclick = () => { 
           if(tutTimeout) clearTimeout(tutTimeout);
@@ -243,7 +244,17 @@
       };
       return; 
     }
-    
+
+    // forçar src correto da welcome-img (fix imediato)
+    setTimeout(() => {
+      const splash = document.querySelector('.splash-logo-img');
+      const welcomeImg = document.querySelector('.welcome-img');
+      if (welcomeImg) {
+        welcomeImg.src = splash ? splash.src : './logo.png';
+        welcomeImg.alt = welcomeImg.alt || 'KM Lucro';
+      }
+    }, 50);
+
     if(headerLogo) headerLogo.classList.remove('hidden');
     if(fabBtn) fabBtn.classList.remove('hidden');
     if(helpBtn) helpBtn.classList.remove('hidden');
@@ -282,7 +293,7 @@
     mSys.addEventListener('change', ()=>{ if(mSys.value==='liquido') dHelp.classList.remove('hidden'); else dHelp.classList.add('hidden'); });
     iP.addEventListener('input',e=>{let v=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,''); if(v.length>3)v=v.slice(0,3)+'-'+v.slice(3,7); e.target.value=v.slice(0,8);});
     ov.querySelector('#mCancel').onclick=()=>ov.remove();
-    ov.querySelector('#mSave').onclick()=>{
+    ov.querySelector('#mSave').onclick=()=>{
       const pl=iP.value.trim(); const km=parseFloat(ov.querySelector('#mKm').value); const sys=mSys.value;
       if(pl.length<7)return alert('Placa inválida'); if(isNaN(km))return alert('Informe KM');
       if(carros.find(x=>x.placa===pl))return alert('Placa já existe');
@@ -298,8 +309,6 @@
   function renderMenuPanel(){
     navigate('PANEL', carroAtual.apelido.toUpperCase(), ()=>{ renderGarage(); navigate('GARAGE'); });
     const isGNV = carroAtual.sistema === 'gnv';
-    const labelFuel = isGNV ? 'Histórico Cilindro' : 'Histórico Combustível';
-    const iconFuel = isGNV ? '🔥' : '⛽';
     
     const svgs = {
       calc: '<svg viewBox="0 0 24 24"><path d="M19,3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3M7,7H17V9H7V7M7,11H11V13H7V11M13,11H17V13H13V11M7,15H11V17H7V15M13,15H17V17H13V15Z" /></svg>',
@@ -310,7 +319,6 @@
       calc_flex: '<svg viewBox="0 0 24 24"><path d="M7,2H17A2,2 0 0,1 19,4V20A2,2 0 0,1 17,22H7A2,2 0 0,1 5,20V4A2,2 0 0,1 7,2M7,4V9H17V4H7M7,11V13H9V11H7M11,11V13H13V11H11M15,11V13H17V11H15M7,15V17H9V15H7M11,15V17H13V15H11M15,15V17H17V15H15M7,19V21H17V19H7Z"/></svg>'
     };
     
-    // MENU LIMPO (SEM AJUDA)
     panelContent.innerHTML=`<div class="menu-grid">
       <div class="menu-btn" id="bC"><div class="menu-icon-svg-box">${svgs.calc}</div><div class="menu-lbl">Calcular Dia</div></div>
       <div class="menu-btn" id="bK"><div class="menu-icon-svg-box">${svgs.km}</div><div class="menu-lbl">Histórico KM</div></div>
@@ -419,15 +427,13 @@
       if(isGNV){ localStorage.setItem('last_gnv_price', iP.dataset.raw); } 
       else { localStorage.setItem('last_liq_type', type); localStorage.setItem('last_liq_price', iP.dataset.raw); }
       const qtd = Number((v/p).toFixed(2));
-      // Criamos o objeto de despesa, mas **não** salvamos diretamente em day.despesas aqui.
-      // A despesa ficará anexada ao turno (reg.combustivel) e será exibida via turnos.
       const despesa = { id: uid(), tipo: 'DESPESA', grupo: 'combustivel', subgrupo: type, valor: v, preco: p, qtd: qtd, data: getLocalYMD(), createdAt: Date.now() };
       reg.combustivel = despesa; 
       ov.remove(); finishSave(reg, despesa);
     };
   }
 
-  // --- FINISH SAVE (corrigida para evitar duplicação) ---
+  // --- FINISH SAVE ---
   function finishSave(reg, despesaCombustivel){
     try {
       const ymd = getLocalYMD();
@@ -438,35 +444,24 @@
 
       const day = db[carroAtual.placa][ymd];
 
-      // se já existe um turno com o mesmo id, atualiza ao invés de duplicar
       const existIdx = (day.turnos || []).findIndex(t => t.id === reg.id);
       if(existIdx !== -1){
         day.turnos[existIdx] = reg;
-        console.log('Turno atualizado:', reg.id);
       } else {
         day.turnos.push(reg);
-        console.log('Turno adicionado:', reg.id);
       }
-
-      // IMPORTANT:
-      // Não adicionamos a despesa de combustível em day.despesas quando ela veio via turno.
-      // Isso evita duplicação na tela de Despesas (já que renderHistory agrega combustíveis dos turnos).
-      // Se quiser manter também em despesas, adicione aqui com uma flag isTurno:true e trate no render.
 
       saveHistAll(db);
 
-      // atualiza km do carro se necessário
       if(reg.kmFinal > carroAtual.kmCarro){
         carroAtual.kmCarro = reg.kmFinal;
         const idx = carros.findIndex(c => c.placa === carroAtual.placa);
         if(idx !== -1){ carros[idx].kmCarro = reg.kmFinal; saveData('km_carros', carros); }
       }
 
-      // limpa turno ativo
       localStorage.removeItem('turno_' + carroAtual.placa);
       turno = null;
 
-      // render resultado
       renderResultView(reg);
     } catch(err) {
       console.error('Erro em finishSave:', err);
@@ -591,11 +586,7 @@
     }
 
     if(tipo === 'DESPESA'){
-        // Construir lista de despesas do dia:
-        // - as "despesas" regulares (salvas via openAddExpenseModal)
-        // - os combustíveis vindo dos turnos (reg.combustivel)
-        // Importante: não duplicar combustíveis que foram previamente salvos em despesas.
-        const savedDesp = (dayObj.despesas||[]).filter(d => !d.isTurno); // ignorar despesas marcadas como isTurno
+        const savedDesp = (dayObj.despesas||[]).filter(d => !d.isTurno);
         const allDesp = [...savedDesp];
         (dayObj.turnos||[]).forEach(t => { if(t.combustivel) allDesp.push({...t.combustivel, isTurno:true, id:t.id}); }); 
         allDesp.forEach(d => {
@@ -694,7 +685,6 @@ function openMonthPicker(init, cb){
   if(!btnHelp) return;
 
   btnHelp.addEventListener('click', ()=> {
-    // se já existir, evita duplicar
     if(document.querySelector('.tutorial-overlay')) return;
 
     const ov = document.createElement('div');
@@ -722,7 +712,6 @@ function openMonthPicker(init, cb){
       </div>
     `;
 
-    // fechar ao clicar fora
     ov.addEventListener('click', (e)=>{
       if(e.target === ov) ov.remove();
     });
@@ -732,4 +721,3 @@ function openMonthPicker(init, cb){
     ov.querySelector('#helpMore').addEventListener('click', ()=> ov.remove());
   });
 })();
-
