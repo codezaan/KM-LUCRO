@@ -1,50 +1,47 @@
 <!doctype html>
 <html lang="pt-br">
 <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>KM LUCRO</title>
+
   <link rel="stylesheet" href="style.css">
-
-  <!-- MANIFEST -->
   <link rel="manifest" href="manifest.json">
-
   <meta name="theme-color" content="#FFD000">
 
-  <!-- Ícones -->
+  <!-- ícones (use nomes exatos do repo) -->
   <link rel="icon" type="image/png" sizes="192x192" href="icone-192.png">
   <link rel="apple-touch-icon" href="icone-512.png">
-
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <style>
+    /* Força tutorial/splash por cima (caso CSS falhe) */
+    #splash { z-index: 99999; }
+    .tutorial-overlay { z-index: 100000 !important; }
+  </style>
 </head>
-
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./service-worker.js')
-      .then(() => console.log('Service Worker registrado'))
-      .catch((err) => console.warn('Erro registrando SW:', err));
-  }
-</script>
-
 <body>
 
-  <!-- SPLASH -->
+  <!-- SPLASH: se o logo está no root (logo.png), usamos ./logo.png.
+       Se no seu repo estiver dentro de "imagens/logo.png", troque para 'imagens/logo.png'.
+       -> VERIFICA: no Git você mostrou 'logo.png' na raiz, então usamos './logo.png' -->
   <div id="splash">
     <div class="splash-content">
-      <img src="./logo.png" class="splash-logo-img" alt="KM Lucro">
-      <p class="splash-sub">Gestão Inteligente</p>
+      <img src="./logo.png" onerror="this.style.display='none';" class="splash-logo-img" alt="KM Lucro">
+      <p class="splash-sub">GESTÃO INTELIGENTE</p>
     </div>
   </div>
 
   <div class="app-container">
-    
     <header id="appHeader" class="app-header hidden">
       <button id="btnBack" class="btn-back">←</button>
       <div id="headerTitle" class="header-title">KM LUCRO</div>
     </header>
 
-    <!-- GARAGE VIEW -->
     <div id="viewGarage">
       <div class="garage-header">
-        <!-- CORRIGIDO AQUI -->
-        <img src="./logo.png" class="logo-header" alt="KM Lucro">
+        <!-- aqui também usar o mesmo path: ./logo.png -->
+        <img src="./logo.png" onerror="this.style.display='none';" class="logo-header" alt="KM Lucro">
       </div>
 
       <div class="car-list" id="carList"></div>
@@ -60,22 +57,22 @@
     <div id="viewResult" class="result-view hidden">
       <div id="resultContent" style="width:100%"></div>
     </div>
-
   </div>
 
   <script src="app.js"></script>
 
   <script>
+    // registra service worker com caminho relativo
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./service-worker.js')
-          .then(() => console.log('App pronto para instalar'))
-          .catch((err) => console.log('Erro SW:', err));
+          .then(() => console.log('Service Worker registrado'))
+          .catch((err) => console.warn('Erro registrando SW:', err));
       });
     }
   </script>
-
 </body>
 </html>
+
 
 
