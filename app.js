@@ -81,8 +81,10 @@
     uiBack.onclick = backFn || (() => navigate('GARAGE'));
   }
 
+  // ---------- LOAD HANDLER (updated: show tutorial in front on first run) ----------
   window.addEventListener('load', ()=>{
-    setTimeout(()=>{const s=qs('#splash'); if(s){s.style.opacity=0;setTimeout(()=>s.remove(),500);}},2000);
+    const splash = qs('#splash');
+
     renderGarage();
     
     // Botão AJUDA DA GARAGEM
@@ -96,92 +98,111 @@
         openModalCar(); 
     };
     
+    // Se nunca viu o tutorial: mostra IMEDIATAMENTE em primeiro plano
     const seen = localStorage.getItem('tutorial_seen');
     if(!seen && carros.length === 0) {
+      // esconde o splash para o tutorial ficar "clean" na frente
+      if(splash) splash.style.display = 'none';
+
+      // mostra tutorial agora; a função grava tutorial_seen ao fechar se for first-run
+      startTutorial(false);
+
+      // não precisa do timeout
+      tutTimeout = null;
+    } else {
+      // comportamento normal: fade do splash e remoção
+      if(splash){
+        setTimeout(()=>{ splash.style.opacity = 0; setTimeout(()=>splash.remove(),500); }, 2000);
+      }
+
+      // se já for visto e houver carros, mantém renderGarage tal qual
+      if(!seen && carros.length > 0){
+        // caso raro: agenda tutorial se quiser (mantido para compatibilidade)
         tutTimeout = setTimeout(() => startTutorial(false), 2500);
+      }
     }
   });
 
   // --- TUTORIAL ---
-    
+      
    // Substitua a função existente por esta:
-function startTutorial(isManual){
-  // evita duplicar
-  if(document.querySelector('.tutorial-overlay')) return;
+  function startTutorial(isManual){
+    // evita duplicar
+    if(document.querySelector('.tutorial-overlay')) return;
 
-  const steps = [
-    { icon: '👋', title: 'Bem-vindo!', text: 'O <b>KM LUCRO</b> é seu parceiro para gerenciar ganhos e custos de forma inteligente.' },
-    { icon: '🚗', title: '1. Cadastre', text: 'Comece adicionando seu veículo. Informe se ele é <b>Combustível Líquido (DEG)</b> ou <b>GNV (Cilindro)</b>.' },
-    { icon: '📝', title: '2. Informe', text: 'Ao finalizar o dia, você só precisa digitar o <b>KM Final</b> e o <b>Valor Total Ganho</b>.' },
-    { icon: '⛽', title: '3. Abastecimento', text: 'Se abasteceu, lance o valor. O app desconta do ganho e calcula seu <b>Lucro Líquido</b> e a <b>Média</b> na hora!' }
-  ];
+    const steps = [
+      { icon: '👋', title: 'Bem-vindo!', text: 'O <b>KM LUCRO</b> é seu parceiro para gerenciar ganhos e custos de forma inteligente.' },
+      { icon: '🚗', title: '1. Cadastre', text: 'Comece adicionando seu veículo. Informe se ele é <b>Combustível Líquido (DEG)</b> ou <b>GNV (Cilindro)</b>.' },
+      { icon: '📝', title: '2. Informe', text: 'Ao finalizar o dia, você só precisa digitar o <b>KM Final</b> e o <b>Valor Total Ganho</b>.' },
+      { icon: '⛽', title: '3. Abastecimento', text: 'Se abasteceu, lance o valor. O app desconta do ganho e calcula seu <b>Lucro Líquido</b> e a <b>Média</b> na hora!' }
+    ];
 
-  let currentStep = 0;
-  const ov = document.createElement('div');
-  ov.className = 'tutorial-overlay';
-  ov.setAttribute('role','dialog');
-  ov.setAttribute('aria-modal','true');
+    let currentStep = 0;
+    const ov = document.createElement('div');
+    ov.className = 'tutorial-overlay';
+    ov.setAttribute('role','dialog');
+    ov.setAttribute('aria-modal','true');
 
-  // fecha e restaura scroll
-  function closeTut(saveSeen=true){
-    document.body.style.overflow = ''; // restaura scroll
-    if(saveSeen && !isManual) localStorage.setItem('tutorial_seen','true');
-    ov.style.opacity = '0';
-    setTimeout(()=>{ if(ov && ov.parentNode) ov.remove(); }, 240);
-  }
+    // fecha e restaura scroll
+    function closeTut(saveSeen=true){
+      document.body.style.overflow = ''; // restaura scroll
+      if(saveSeen && !isManual) localStorage.setItem('tutorial_seen','true');
+      ov.style.opacity = '0';
+      setTimeout(()=>{ if(ov && ov.parentNode) ov.remove(); }, 240);
+    }
 
-  function renderStep(){
-    const s = steps[currentStep];
-    const btnText = currentStep === steps.length - 1 ? 'ENTENDI' : 'PRÓXIMO ➔';
-    const skipText = isManual ? 'Fechar' : 'Pular Introdução';
+    function renderStep(){
+      const s = steps[currentStep];
+      const btnText = currentStep === steps.length - 1 ? 'ENTENDI' : 'PRÓXIMO ➔';
+      const skipText = isManual ? 'Fechar' : 'Pular Introdução';
 
-    // monta dots
-    let dots = '<div style="display:flex;gap:6px;margin-top:12px">';
-    steps.forEach((_,i)=>{ dots += `<span style="width:8px;height:8px;border-radius:8px;display:inline-block;background:${i===currentStep? 'var(--accent)' : '#333'}"></span>`; });
-    dots += '</div>';
+      // monta dots
+      let dots = '<div style="display:flex;gap:6px;margin-top:12px">';
+      steps.forEach((_,i)=>{ dots += `<span style="width:8px;height:8px;border-radius:8px;display:inline-block;background:${i===currentStep? 'var(--accent)' : '#333'}"></span>`; });
+      dots += '</div>';
 
-    ov.innerHTML = `
-      <div class="tutorial-card">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-          <div style="font-size:34px">${s.icon}</div>
-          <div>
-            <div style="font-weight:800;font-size:18px;color:var(--accent);text-transform:uppercase">${s.title}</div>
-            <div style="font-size:13px;color:var(--muted);margin-top:6px">${s.text}</div>
+      ov.innerHTML = `
+        <div class="tutorial-card">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+            <div style="font-size:34px">${s.icon}</div>
+            <div>
+              <div style="font-weight:800;font-size:18px;color:var(--accent);text-transform:uppercase">${s.title}</div>
+              <div style="font-size:13px;color:var(--muted);margin-top:6px">${s.text}</div>
+            </div>
+          </div>
+          ${dots}
+          <div class="btn-row">
+            <button id="tutBtn" class="btn-primary">${btnText}</button>
+            <button id="tutSkip" class="btn-secondary">${skipText}</button>
           </div>
         </div>
-        ${dots}
-        <div class="btn-row">
-          <button id="tutBtn" class="btn-primary">${btnText}</button>
-          <button id="tutSkip" class="btn-secondary">${skipText}</button>
-        </div>
-      </div>
-    `;
+      `;
 
-    // eventos
-    ov.querySelector('#tutBtn').onclick = () => {
-      if(currentStep < steps.length - 1){
-        currentStep++;
-        renderStep();
-        ov.scrollTop = 0;
-      } else {
-        closeTut(true);
-      }
-    };
-    ov.querySelector('#tutSkip').onclick = () => closeTut(isManual ? false : true);
-  }
-
-  // fecha ao clicar fora do card
-  ov.addEventListener('click', (e) => {
-    if(e.target === ov){
-      closeTut(isManual ? false : true);
+      // eventos
+      ov.querySelector('#tutBtn').onclick = () => {
+        if(currentStep < steps.length - 1){
+          currentStep++;
+          renderStep();
+          ov.scrollTop = 0;
+        } else {
+          closeTut(true);
+        }
+      };
+      ov.querySelector('#tutSkip').onclick = () => closeTut(isManual ? false : true);
     }
-  });
 
-  // impede scroll do body enquanto tutorial aberto
-  document.body.appendChild(ov);
-  document.body.style.overflow = 'hidden';
-  renderStep();
-}
+    // fecha ao clicar fora do card
+    ov.addEventListener('click', (e) => {
+      if(e.target === ov){
+        closeTut(isManual ? false : true);
+      }
+    });
+
+    // impede scroll do body enquanto tutorial aberto
+    document.body.appendChild(ov);
+    document.body.style.overflow = 'hidden';
+    renderStep();
+  }
 
 
   // --- GARAGEM ---
@@ -261,7 +282,7 @@ function startTutorial(isManual){
     mSys.addEventListener('change', ()=>{ if(mSys.value==='liquido') dHelp.classList.remove('hidden'); else dHelp.classList.add('hidden'); });
     iP.addEventListener('input',e=>{let v=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,''); if(v.length>3)v=v.slice(0,3)+'-'+v.slice(3,7); e.target.value=v.slice(0,8);});
     ov.querySelector('#mCancel').onclick=()=>ov.remove();
-    ov.querySelector('#mSave').onclick=()=>{
+    ov.querySelector('#mSave').onclick()=>{
       const pl=iP.value.trim(); const km=parseFloat(ov.querySelector('#mKm').value); const sys=mSys.value;
       if(pl.length<7)return alert('Placa inválida'); if(isNaN(km))return alert('Informe KM');
       if(carros.find(x=>x.placa===pl))return alert('Placa já existe');
@@ -711,3 +732,4 @@ function openMonthPicker(init, cb){
     ov.querySelector('#helpMore').addEventListener('click', ()=> ov.remove());
   });
 })();
+
